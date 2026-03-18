@@ -453,59 +453,36 @@
         text-align: center;
       }
 
-      .aiSection {
-        margin-bottom: 14px;
-      }
+      .item { cursor: pointer; user-select: none; }
+      .item[data-state="required"] { background: rgba(15,138,58,.12); border-color: rgba(15,138,58,.4); }
+      .item[data-state="forbidden"] { background: rgba(198,27,27,.07); border-color: rgba(198,27,27,.35); }
+      .item[data-state="forbidden"] .itemName { text-decoration: line-through; color: var(--muted); }
 
-      .aiInputRow {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 8px;
-        align-items: center;
-        margin-bottom: 10px;
+      .stateIcon {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 1.5px solid rgba(20,20,20,.2);
+        font-size: 11px; font-weight: 700; flex-shrink: 0; line-height: 1;
+        transition: background .12s, border-color .12s;
       }
+      .item[data-state="required"] .stateIcon { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .item[data-state="forbidden"] .stateIcon { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-      .aiInputRow input {
-        width: 100%;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.9);
-        color: var(--ink);
-        padding: 10px 12px;
-        outline: none;
+      .vegFilterBtn {
+        font-size: 12px; font-weight: 600;
+        padding: 5px 11px; border-radius: 999px;
+        border: 1.5px solid rgba(15,138,58,.35);
+        background: transparent; color: var(--accent);
+        cursor: pointer; transition: background .12s;
       }
+      .vegFilterBtn.active { background: rgba(15,138,58,.15); border-color: var(--accent); }
+      .vegFilterBtn:hover { background: rgba(15,138,58,.1); }
 
-      .aiInputRow input:focus {
-        border-color: rgba(198, 27, 27, 0.5);
-        box-shadow: 0 0 0 4px rgba(198, 27, 27, 0.18);
+      .tag.forbidden {
+        border-color: rgba(198,27,27,.4);
+        background: rgba(198,27,27,.08);
       }
-
-      .aiLabel {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 8px;
-      }
-
-      .aiDivider {
-        border: none;
-        border-top: 1px solid var(--border);
-        margin: 12px 0;
-      }
-
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-      }
-
-      .loading {
-        animation: pulse 1.2s ease infinite;
-        color: var(--muted);
-        font-size: 13px;
-        padding: 6px 0;
-      }
+      .tag.forbidden button { color: var(--danger); }
     </style>
   </head>
   <body>
@@ -525,7 +502,10 @@
         <section class="panel">
           <div class="panelHeader">
             <h2>Ingredients</h2>
-            <span id="countPill" class="pill" aria-live="polite"></span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button id="vegFilterBtn" class="vegFilterBtn" type="button">🌿 Vegetarian</button>
+              <span id="countPill" class="pill" aria-live="polite"></span>
+            </div>
           </div>
           <div class="panelBody">
             <div class="searchRow" style="grid-template-columns: 1fr auto">
@@ -581,13 +561,6 @@
             </div>
           </div>
           <div class="panelBody">
-            <div id="describeSection" class="aiSection">
-              <div class="aiInputRow">
-                <input id="describeInput" type="text" placeholder="Describe what you want (e.g. spicy chicken with greens)…" />
-                <button id="findBtn" type="button">Ask AI</button>
-              </div>
-              <div id="aiResults"></div>
-            </div>
             <div id="recList" class="recList"></div>
             <div id="orderListEl" class="recList" style="display:none"></div>
           </div>
@@ -862,10 +835,7 @@
         tabOrder: document.getElementById("tabOrder"),
         orderBadge: document.getElementById("orderBadge"),
         recPanelTitle: document.getElementById("recPanelTitle"),
-        describeSection: document.getElementById("describeSection"),
-        describeInput: document.getElementById("describeInput"),
-        findBtn: document.getElementById("findBtn"),
-        aiResults: document.getElementById("aiResults"),
+        vegFilterBtn: document.getElementById("vegFilterBtn"),
       };
 
       let currentTab = "sandwiches";
@@ -873,17 +843,27 @@
       /** @type {{ingredients: typeof DEFAULT_INGREDIENTS, selectedIds: string[], orderItems: {presetId: string, label: string, qty: number}[]}} */
       let state = loadState();
 
+      const NON_VEG_IDS = new Set([
+        "grilled-chicken","fried-chicken-cutlet","roast-beef","turkey","ham",
+        "capicola","prosciutto","pepperoni","salami","sopressata","tuna",
+        "meatballs","italian-sausage","mortadella","veal","roast-pork",
+        "sicilian-salami","genoa-salami","bologna","bresaola","pepper-ham",
+        "olive-loaf","honey-turkey","steak","shrimp","bacon","gravy",
+      ]);
+
       function loadState() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [], orderItems: [] };
+          if (!raw) return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [], forbiddenIds: [], orderItems: [], vegetarianOnly: false };
           const parsed = JSON.parse(raw);
           const ingredients = Array.isArray(parsed.ingredients) ? parsed.ingredients : DEFAULT_INGREDIENTS.slice();
           const selectedIds = Array.isArray(parsed.selectedIds) ? parsed.selectedIds : [];
+          const forbiddenIds = Array.isArray(parsed.forbiddenIds) ? parsed.forbiddenIds : [];
           const orderItems = Array.isArray(parsed.orderItems) ? parsed.orderItems : [];
-          return { ingredients, selectedIds, orderItems };
+          const vegetarianOnly = !!parsed.vegetarianOnly;
+          return { ingredients, selectedIds, forbiddenIds, orderItems, vegetarianOnly };
         } catch {
-          return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [], orderItems: [] };
+          return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [], forbiddenIds: [], orderItems: [], vegetarianOnly: false };
         }
       }
 
@@ -904,9 +884,14 @@
         return state.ingredients.filter((i) => selectedSet.has(i.id));
       }
 
+      function getIngredientState(id) {
+        if (state.selectedIds.includes(id)) return "required";
+        if (state.forbiddenIds.includes(id)) return "forbidden";
+        return "neutral";
+      }
+
       function render() {
         const q = normalized(els.searchInput.value);
-        const selectedSet = new Set(state.selectedIds);
         const ingredients = state.ingredients
           .slice()
           .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
@@ -915,36 +900,44 @@
         const mains = ingredients.filter((i) => i.kind === "main");
         const sides = ingredients.filter((i) => i.kind === "side");
 
-        els.mainsList.innerHTML = mains.map((i) => itemHtml(i, selectedSet.has(i.id))).join("");
-        els.sidesList.innerHTML = sides.map((i) => itemHtml(i, selectedSet.has(i.id))).join("");
+        els.mainsList.innerHTML = mains.map((i) => itemHtml(i, getIngredientState(i.id))).join("");
+        els.sidesList.innerHTML = sides.map((i) => itemHtml(i, getIngredientState(i.id))).join("");
 
-        const selected = getSelectedIngredients().sort((a, b) => a.name.localeCompare(b.name));
-        els.selectedTags.innerHTML = selected.length
-          ? selected.map((i) => tagHtml(i)).join("")
-          : `<div class="small">No ingredients selected yet. Use the checkboxes to build your sandwich.</div>`;
+        const required = state.ingredients.filter((i) => state.selectedIds.includes(i.id)).sort((a, b) => a.name.localeCompare(b.name));
+        const forbidden = state.ingredients.filter((i) => state.forbiddenIds.includes(i.id)).sort((a, b) => a.name.localeCompare(b.name));
+        const allTagged = [...required, ...forbidden];
+        els.selectedTags.innerHTML = allTagged.length
+          ? allTagged.map((i) => tagHtml(i, state.forbiddenIds.includes(i.id))).join("")
+          : `<div class="small">Click an ingredient once to require it, twice to forbid it.</div>`;
 
-        const selectedMains = selected.filter((x) => x.kind === "main").length;
-        const selectedSides = selected.filter((x) => x.kind === "side").length;
+        const selectedMains = required.filter((x) => x.kind === "main").length;
+        const selectedSides = required.filter((x) => x.kind === "side").length;
         els.countPill.textContent = `${selectedMains} mains • ${selectedSides} sides`;
+
+        els.vegFilterBtn.classList.toggle("active", state.vegetarianOnly);
 
         renderRecommendations();
         renderOrderList();
       }
 
       function renderRecommendations() {
-        const selectedSet = new Set(state.selectedIds);
+        const requiredSet = new Set(state.selectedIds);
+        const forbiddenSet = new Set(state.forbiddenIds);
 
-        if (selectedSet.size === 0) {
+        const noFilters = requiredSet.size === 0 && forbiddenSet.size === 0 && !state.vegetarianOnly;
+        if (noFilters) {
           els.recCountPill.textContent = "";
-          els.recList.innerHTML = `<div class="small" style="padding:4px 0">Select ingredients to see matching sandwiches.</div>`;
+          els.recList.innerHTML = `<div class="small" style="padding:4px 0">Click an ingredient once to require it, twice to forbid it.</div>`;
           return;
         }
 
-        const matches = PRESETS.map((preset) => {
-          const included = preset.ingredientIds.filter((id) => selectedSet.has(id));
-          return { preset, included };
-        })
-          .filter((r) => r.included.length === selectedSet.size)
+        const matches = PRESETS.filter((preset) => {
+          const ids = preset.ingredientIds;
+          if (requiredSet.size > 0 && !Array.from(requiredSet).every((id) => ids.includes(id))) return false;
+          if (forbiddenSet.size > 0 && ids.some((id) => forbiddenSet.has(id))) return false;
+          if (state.vegetarianOnly && ids.some((id) => NON_VEG_IDS.has(id))) return false;
+          return true;
+        }).map((preset) => ({ preset, included: preset.ingredientIds.filter((id) => requiredSet.has(id)) }))
           .sort((a, b) => b.included.length - a.included.length);
 
         els.recCountPill.textContent = matches.length ? `${matches.length}` : "";
@@ -962,8 +955,7 @@
           const chips = preset.ingredientIds.map((id) => {
             const ing = state.ingredients.find((i) => i.id === id);
             const name = ing ? ing.name : id;
-            const isSelected = selectedSet.has(id);
-            const style = isSelected
+            const style = requiredSet.has(id)
               ? "background:rgba(15,138,58,.15);border-color:rgba(15,138,58,.4);color:var(--ink);font-weight:600"
               : "background:rgba(20,20,20,.05);border-color:transparent;color:var(--faint)";
             return `<span class="pill" style="padding:3px 8px;font-size:11px;${style}">${escapeHtml(name)}</span>`;
@@ -1009,83 +1001,8 @@
         els.tabSandwiches.classList.toggle("active", tab === "sandwiches");
         els.tabOrder.classList.toggle("active", tab === "order");
         els.recList.style.display = tab === "sandwiches" ? "" : "none";
-        els.describeSection.style.display = tab === "sandwiches" ? "" : "none";
         els.orderListEl.style.display = tab === "order" ? "" : "none";
         els.recPanelTitle.textContent = tab === "sandwiches" ? "Sandwiches" : "Order list";
-      }
-
-      async function findByDescription() {
-        const description = els.describeInput.value.trim();
-        if (!description) return;
-
-        els.findBtn.disabled = true;
-        els.aiResults.innerHTML = `<div class="loading">Finding matches…</div>`;
-
-        const sandwichList = PRESETS.map((p) => {
-          const ingredientNames = p.ingredientIds
-            .map((id) => { const ing = state.ingredients.find((i) => i.id === id); return ing ? ing.name : id; })
-            .join(", ");
-          return `ID:${p.id} | ${p.label} | ${ingredientNames}`;
-        }).join("\n");
-
-        const prompt = `You help customers pick from Lioni's Italian Heroes sandwich menu.\n\nCustomer says: "${description}"\n\nSandwiches:\n${sandwichList}\n\nReturn the IDs of the 2–4 sandwiches that best match the customer's description. Consider ingredients and flavor profile. Reply with ONLY a valid JSON array of ID strings — no explanation, no markdown. Example: ["65","32"]`;
-
-        try {
-          const res = await fetch("http://localhost:11434/v1/chat/completions", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              model: "llama3.2:1b",
-              messages: [{ role: "user", content: prompt }],
-              max_tokens: 256,
-              stream: false,
-            }),
-          });
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error?.message || `HTTP ${res.status} — is Ollama running?`);
-          }
-
-          const data = await res.json();
-          const rawText = data.choices[0].message.content.trim();
-          const jsonText = rawText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-          const ids = JSON.parse(jsonText);
-          const suggestions = ids.map((id) => PRESETS.find((p) => p.id === String(id))).filter(Boolean);
-          renderAiSuggestions(suggestions);
-        } catch (err) {
-          els.aiResults.innerHTML = `<div class="small" style="color:var(--danger);padding:4px 0">Error: ${escapeHtml(err.message)}</div>`;
-        } finally {
-          els.findBtn.disabled = false;
-        }
-      }
-
-      function renderAiSuggestions(suggestions) {
-        if (!suggestions.length) {
-          els.aiResults.innerHTML = `<div class="small" style="padding:4px 0">No matches found — try rephrasing.</div>`;
-          return;
-        }
-        const selectedSet = new Set(state.selectedIds);
-        const items = suggestions.map((preset) => {
-          const chips = preset.ingredientIds.map((id) => {
-            const ing = state.ingredients.find((i) => i.id === id);
-            const name = ing ? ing.name : id;
-            const isSelected = selectedSet.has(id);
-            const style = isSelected
-              ? "background:rgba(15,138,58,.15);border-color:rgba(15,138,58,.4);color:var(--ink);font-weight:600"
-              : "background:rgba(20,20,20,.05);border-color:transparent;color:var(--faint)";
-            return `<span class="pill" style="padding:3px 8px;font-size:11px;${style}">${escapeHtml(name)}</span>`;
-          }).join("");
-          return `
-            <div class="recItem" style="flex-direction:column;align-items:flex-start;gap:6px;border-color:rgba(198,27,27,.22);background:rgba(198,27,27,.04)">
-              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px">
-                <div style="font-weight:600;font-size:13px;min-width:0">${escapeHtml(preset.label)}</div>
-                <button class="addToOrderBtn primary" type="button" data-preset-id="${escapeAttr(preset.id)}" data-preset-label="${escapeAttr(preset.label)}" style="flex-shrink:0;border-radius:8px;padding:5px 10px;font-size:12px">+ Add</button>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>
-            </div>`;
-        }).join("");
-        els.aiResults.innerHTML = `<div class="aiLabel">AI suggestions</div><div class="recList" style="margin-bottom:0">${items}</div><hr class="aiDivider">`;
       }
 
       function addToOrder(presetId, label) {
@@ -1116,29 +1033,31 @@
         renderOrderList();
       }
 
-      function itemHtml(i, checked) {
+      function itemHtml(i, ingState) {
         const hint = i.hint ? `<div class="itemHint">${escapeHtml(i.hint)}</div>` : "";
+        const icon = ingState === "required" ? "✓" : ingState === "forbidden" ? "✕" : "";
         return `
-          <label class="item" data-id="${escapeAttr(i.id)}" role="listitem">
+          <div class="item" data-id="${escapeAttr(i.id)}" data-state="${ingState}" role="listitem">
             <span class="itemLeft">
-              <input class="check" type="checkbox" ${checked ? "checked" : ""} />
+              <span class="stateIcon" aria-hidden="true">${icon}</span>
               <span style="min-width:0">
                 <div class="itemName">${escapeHtml(i.name)}</div>
                 ${hint}
               </span>
             </span>
-          </label>
+          </div>
         `;
       }
 
-      function tagHtml(i) {
-        const kindBadge =
-          i.kind === "main"
+      function tagHtml(i, isForbidden) {
+        const kindBadge = isForbidden
+          ? `<span class="pill" style="padding:4px 8px;border-color:rgba(198,27,27,.35);background:rgba(198,27,27,.12)"><b>✕ Avoid</b></span>`
+          : i.kind === "main"
             ? `<span class="pill" style="padding:4px 8px;border-color:rgba(124,92,255,.35);background:rgba(124,92,255,.15)"><b>Main</b></span>`
             : `<span class="pill" style="padding:4px 8px;border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.12)"><b>Side</b></span>`;
 
         return `
-          <span class="tag" data-id="${escapeAttr(i.id)}">
+          <span class="tag${isForbidden ? " forbidden" : ""}" data-id="${escapeAttr(i.id)}">
             ${kindBadge}
             <span>${escapeHtml(i.name)}</span>
             <button type="button" aria-label="Remove ${escapeAttr(i.name)}">×</button>
@@ -1167,22 +1086,31 @@
       }
 
       function toggleIngredient(id) {
-        const set = new Set(state.selectedIds);
-        if (set.has(id)) set.delete(id);
-        else set.add(id);
-        saveState({ selectedIds: Array.from(set) });
+        const required = new Set(state.selectedIds);
+        const forbidden = new Set(state.forbiddenIds);
+        if (required.has(id)) {
+          required.delete(id);
+          forbidden.add(id);
+        } else if (forbidden.has(id)) {
+          forbidden.delete(id);
+        } else {
+          required.add(id);
+        }
+        saveState({ selectedIds: Array.from(required), forbiddenIds: Array.from(forbidden) });
         render();
       }
 
       function removeIngredient(id) {
-        const set = new Set(state.selectedIds);
-        set.delete(id);
-        saveState({ selectedIds: Array.from(set) });
+        const required = new Set(state.selectedIds);
+        const forbidden = new Set(state.forbiddenIds);
+        required.delete(id);
+        forbidden.delete(id);
+        saveState({ selectedIds: Array.from(required), forbiddenIds: Array.from(forbidden) });
         render();
       }
 
       function clearAll() {
-        saveState({ selectedIds: [] });
+        saveState({ selectedIds: [], forbiddenIds: [], vegetarianOnly: false });
         render();
         showToast("Cleared.");
       }
@@ -1239,15 +1167,15 @@
       // Events
       els.searchInput.addEventListener("input", () => render());
 
-      els.mainsList.addEventListener("change", (e) => {
-        const label = e.target.closest("label[data-id]");
-        if (!label) return;
-        toggleIngredient(label.getAttribute("data-id"));
+      els.mainsList.addEventListener("click", (e) => {
+        const item = e.target.closest("[data-id]");
+        if (!item) return;
+        toggleIngredient(item.getAttribute("data-id"));
       });
-      els.sidesList.addEventListener("change", (e) => {
-        const label = e.target.closest("label[data-id]");
-        if (!label) return;
-        toggleIngredient(label.getAttribute("data-id"));
+      els.sidesList.addEventListener("click", (e) => {
+        const item = e.target.closest("[data-id]");
+        if (!item) return;
+        toggleIngredient(item.getAttribute("data-id"));
       });
 
       els.selectedTags.addEventListener("click", (e) => {
@@ -1264,16 +1192,12 @@
       els.applyPresetBtn.addEventListener("click", () => applyPreset());
 
       els.tabSandwiches.addEventListener("click", () => switchTab("sandwiches"));
-
-      els.findBtn.addEventListener("click", () => findByDescription());
-      els.describeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") findByDescription(); });
-
-      els.aiResults.addEventListener("click", (e) => {
-        const btn = e.target.closest(".addToOrderBtn");
-        if (!btn) return;
-        addToOrder(btn.dataset.presetId, btn.dataset.presetLabel);
-      });
       els.tabOrder.addEventListener("click", () => switchTab("order"));
+
+      els.vegFilterBtn.addEventListener("click", () => {
+        saveState({ vegetarianOnly: !state.vegetarianOnly });
+        render();
+      });
 
       els.recList.addEventListener("click", (e) => {
         const btn = e.target.closest(".addToOrderBtn");
