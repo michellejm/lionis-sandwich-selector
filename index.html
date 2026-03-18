@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sandwich Selector</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #0b1220;
+        --panel: rgba(255, 255, 255, 0.08);
+        --panel2: rgba(255, 255, 255, 0.06);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.72);
+        --faint: rgba(255, 255, 255, 0.48);
+        --accent: #7c5cff;
+        --accent2: #22c55e;
+        --danger: #ef4444;
+        --ring: rgba(124, 92, 255, 0.35);
+        --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+        --radius: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          "Apple Color Emoji",
+          "Segoe UI Emoji";
+        background:
+          radial-gradient(1200px 800px at 20% 10%, rgba(124, 92, 255, 0.25), transparent 60%),
+          radial-gradient(1000px 700px at 80% 30%, rgba(34, 197, 94, 0.16), transparent 60%),
+          radial-gradient(900px 900px at 40% 90%, rgba(59, 130, 246, 0.16), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.35;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 28px 18px 44px;
+      }
+
+      .header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 10px 12px;
+        transition:
+          transform 0.06s ease,
+          background 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.22);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, rgba(124, 92, 255, 0.95), rgba(124, 92, 255, 0.7));
+        border-color: rgba(124, 92, 255, 0.5);
+        box-shadow: 0 10px 25px rgba(124, 92, 255, 0.25);
+      }
+
+      button.primary:hover {
+        background: linear-gradient(135deg, rgba(124, 92, 255, 1), rgba(124, 92, 255, 0.78));
+      }
+
+      button.ghost {
+        background: transparent;
+      }
+
+      button.danger {
+        border-color: rgba(239, 68, 68, 0.35);
+      }
+
+      button.danger:hover {
+        border-color: rgba(239, 68, 68, 0.55);
+        background: rgba(239, 68, 68, 0.12);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: clip;
+      }
+
+      .panelHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent);
+      }
+
+      .panelHeader h2 {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.86);
+        letter-spacing: 0.25px;
+        text-transform: uppercase;
+      }
+
+      .panelBody {
+        padding: 14px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .pill b {
+        font-weight: 650;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .searchRow {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .searchRow input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        padding: 10px 12px;
+        outline: none;
+      }
+
+      .searchRow input:focus {
+        border-color: rgba(124, 92, 255, 0.6);
+        box-shadow: 0 0 0 4px var(--ring);
+      }
+
+      .list {
+        display: grid;
+        gap: 8px;
+        max-height: 420px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--panel2);
+      }
+
+      .item:hover {
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .itemLeft {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .itemName {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .itemHint {
+        color: var(--faint);
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .check {
+        inline-size: 18px;
+        block-size: 18px;
+        accent-color: var(--accent);
+      }
+
+      .tagRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+      }
+
+      .tag button {
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1;
+      }
+
+      .tag button:hover {
+        color: rgba(255, 255, 255, 0.95);
+      }
+
+      textarea {
+        width: 100%;
+        resize: vertical;
+        min-height: 160px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.15);
+        color: var(--text);
+        padding: 12px;
+        outline: none;
+        line-height: 1.35;
+      }
+
+      textarea:focus {
+        border-color: rgba(34, 197, 94, 0.6);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+      }
+
+      .footerRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 20, 30, 0.85);
+        color: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        padding: 10px 12px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="title">
+          <h1>Lioni’s Sandwich Selector</h1>
+          <p class="subtitle">Pick mains and sides, then copy a clean order summary.</p>
+        </div>
+        <div class="actions">
+          <button id="copyBtn" class="primary" type="button">Copy summary</button>
+          <button id="clearBtn" class="danger" type="button">Clear</button>
+          <button id="sampleBtn" class="ghost" type="button">Load example</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section class="panel">
+          <div class="panelHeader">
+            <h2>Ingredients</h2>
+            <span id="countPill" class="pill" aria-live="polite"></span>
+          </div>
+          <div class="panelBody">
+            <div class="searchRow" style="grid-template-columns: 1fr auto">
+              <select
+                id="presetSelect"
+                style="
+                  width: 100%;
+                  border-radius: 12px;
+                  border: 1px solid rgba(255, 255, 255, 0.14);
+                  background: rgba(255, 255, 255, 0.05);
+                  color: var(--text);
+                  padding: 10px 12px;
+                  outline: none;
+                "
+              >
+                <option value="">Load a Lioni’s preset (by #)...</option>
+              </select>
+              <button id="applyPresetBtn" type="button">Apply</button>
+            </div>
+
+            <div class="searchRow">
+              <input id="searchInput" type="search" placeholder="Search ingredients (e.g., chicken, pesto)..." />
+              <button id="addCustomBtn" type="button">Add custom</button>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px">
+              <div>
+                <div class="pill" style="margin-bottom: 10px"><b>Mains</b> protein/veg base</div>
+                <div id="mainsList" class="list" role="list"></div>
+              </div>
+              <div>
+                <div class="pill" style="margin-bottom: 10px"><b>Sides</b> sauces/toppings</div>
+                <div id="sidesList" class="list" role="list"></div>
+              </div>
+            </div>
+
+            <div class="tagRow" aria-label="Selected ingredients">
+              <div id="selectedTags" style="display: contents"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panelHeader">
+            <h2>Order summary</h2>
+            <span class="pill"><b>Tip</b> You can edit the text below</span>
+          </div>
+          <div class="panelBody">
+            <textarea id="summary" spellcheck="false"></textarea>
+            <div class="footerRow">
+              <div class="small" id="savedHint">Auto-saves in this browser.</div>
+              <div class="small" id="charCount"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      const STORAGE_KEY = "sandwich-selector:v1";
+
+      /** @type {{id: string, name: string, hint?: string, kind: "main" | "side"}[]} */
+      const DEFAULT_INGREDIENTS = [
+        // Mains
+        { id: "grilled-chicken", name: "Grilled chicken", hint: "warm protein", kind: "main" },
+        { id: "fried-chicken-cutlet", name: "Chicken cutlet", hint: "crispy", kind: "main" },
+        { id: "roast-beef", name: "Roast beef", hint: "classic", kind: "main" },
+        { id: "turkey", name: "Turkey", hint: "classic", kind: "main" },
+        { id: "ham", name: "Ham", hint: "classic", kind: "main" },
+        { id: "capicola", name: "Capicola", hint: "hot or sweet", kind: "main" },
+        { id: "prosciutto", name: "Prosciutto", hint: "salty/savory", kind: "main" },
+        { id: "pepperoni", name: "Pepperoni", hint: "spicy", kind: "main" },
+        { id: "salami", name: "Salami", hint: "spicy", kind: "main" },
+        { id: "sopressata", name: "Sopressata", hint: "hot or sweet", kind: "main" },
+        { id: "tuna", name: "Tuna", hint: "salad-style", kind: "main" },
+        { id: "meatballs", name: "Meatballs", hint: "hot", kind: "main" },
+        { id: "italian-sausage", name: "Italian sausage", hint: "sweet or hot", kind: "main" },
+        { id: "eggplant", name: "Eggplant", hint: "grilled/fried", kind: "main" },
+        { id: "mozzarella", name: "Fresh mozzarella", hint: "caprese vibe", kind: "main" },
+        { id: "mortadella", name: "Mortadella", hint: "bologna-style", kind: "main" },
+        { id: "ricotta", name: "Ricotta", hint: "fresh ricotta", kind: "main" },
+
+        // Sides
+        { id: "lettuce", name: "Lettuce", hint: "shredded/leaf", kind: "side" },
+        { id: "tomato", name: "Tomato", hint: "sliced", kind: "side" },
+        { id: "onions", name: "Onions", hint: "raw", kind: "side" },
+        { id: "arugula", name: "Arugula", hint: "peppery greens", kind: "side" },
+        { id: "pickles", name: "Pickles", hint: "dill", kind: "side" },
+        { id: "banana-peppers", name: "Banana peppers", hint: "tangy", kind: "side" },
+        { id: "jalapenos", name: "Jalapeños", hint: "spicy", kind: "side" },
+        { id: "hot-peppers", name: "Hot peppers", hint: "hot peppers", kind: "side" },
+        { id: "sweet-peppers", name: "Sweet peppers", hint: "sweet peppers", kind: "side" },
+        { id: "roasted-peppers", name: "Roasted peppers", hint: "sweet/smoky", kind: "side" },
+        { id: "stuffed-peppers", name: "Stuffed peppers", hint: "whole stuffed peppers", kind: "side" },
+        { id: "bruschetta", name: "Homemade bruschetta", hint: "tomato/basil mix", kind: "side" },
+        { id: "basil-mix", name: "Homemade basil mix", hint: "Lioni’s basil mix", kind: "side" },
+        { id: "green-pesto", name: "Pesto sauce", hint: "green pesto", kind: "side" },
+        { id: "red-pesto", name: "Red pesto", hint: "red pesto", kind: "side" },
+        { id: "mushroom-stuffing", name: "Mushroom stuffing", hint: "mushroom mix", kind: "side" },
+        { id: "stuffed-mushrooms", name: "Stuffed mushrooms", hint: "topping", kind: "side" },
+        { id: "broccoli-rabe", name: "Broccoli rabe", hint: "bitter greens", kind: "side" },
+        { id: "olive-oil", name: "Olive oil", hint: "extra virgin", kind: "side" },
+        { id: "vinegar", name: "Vinegar", hint: "red wine vinegar", kind: "side" },
+        { id: "balsamic-vinegar", name: "Balsamic vinegar", hint: "tangy/sweet", kind: "side" },
+        { id: "oil-vinegar", name: "Oil & vinegar", hint: "combo", kind: "side" },
+        { id: "mayo", name: "Mayo", hint: "classic", kind: "side" },
+        { id: "mustard", name: "Mustard", hint: "yellow/deli", kind: "side" },
+        { id: "honey-mustard", name: "Honey mustard", hint: "sweet/tangy", kind: "side" },
+        { id: "bbq-sauce", name: "BBQ sauce", hint: "sweet/smoky", kind: "side" },
+        { id: "ranch", name: "Ranch", hint: "creamy", kind: "side" },
+        { id: "spicy-ranch", name: "Spicy ranch", hint: "creamy/spicy", kind: "side" },
+        { id: "hot-sauce", name: "Hot sauce", hint: "spicy", kind: "side" },
+        { id: "horseradish", name: "Horseradish", hint: "sharp", kind: "side" },
+        { id: "salt", name: "Salt", hint: "seasoning", kind: "side" },
+        { id: "black-pepper", name: "Black pepper", hint: "seasoning", kind: "side" },
+        { id: "oregano", name: "Oregano", hint: "seasoning", kind: "side" },
+        { id: "romano-cheese", name: "Romano cheese", hint: "grated", kind: "side" },
+        { id: "shaved-reggiano", name: "Shaved reggiano", hint: "parm-style", kind: "side" },
+        { id: "vodka-sauce", name: "Vodka sauce", hint: "extra sauce", kind: "side" },
+        { id: "provolone", name: "Provolone", hint: "cheese", kind: "side" },
+        { id: "extra-mozzarella", name: "Extra mozzarella", hint: "extra cheese", kind: "side" },
+      ];
+
+      /** @type {{id: string, label: string, ingredientIds: string[]}[]} */
+      const PRESETS = [
+        {
+          id: "11",
+          label: "#11 Vince Lombardi — roasted peppers, fresh mozz, green pesto, olive oil, black pepper",
+          ingredientIds: ["roasted-peppers", "mozzarella", "green-pesto", "olive-oil", "black-pepper"],
+        },
+        {
+          id: "21",
+          label: "#21 Jerry Vale — prosciutto, fresh mozz, pesto, olive oil, black pepper",
+          ingredientIds: ["prosciutto", "mozzarella", "green-pesto", "olive-oil", "black-pepper"],
+        },
+        {
+          id: "32",
+          label: "#32 Dan Marino — grilled chicken, fresh mozz, roasted peppers, olive oil, vinegar, salt, pepper",
+          ingredientIds: ["grilled-chicken", "mozzarella", "roasted-peppers", "olive-oil", "vinegar", "salt", "black-pepper"],
+        },
+        {
+          id: "65",
+          label: "#65 Danny Aiello — grilled chicken, broccoli rabe, fresh mozz, olive oil, salt, pepper",
+          ingredientIds: ["grilled-chicken", "broccoli-rabe", "mozzarella", "olive-oil", "salt", "black-pepper"],
+        },
+        {
+          id: "66",
+          label: "#66 Marco Polo — chicken cutlet, broccoli rabe, fresh mozz, olive oil, salt, pepper",
+          ingredientIds: ["fried-chicken-cutlet", "broccoli-rabe", "mozzarella", "olive-oil", "salt", "black-pepper"],
+        },
+      ];
+
+      const els = {
+        searchInput: document.getElementById("searchInput"),
+        presetSelect: document.getElementById("presetSelect"),
+        applyPresetBtn: document.getElementById("applyPresetBtn"),
+        mainsList: document.getElementById("mainsList"),
+        sidesList: document.getElementById("sidesList"),
+        selectedTags: document.getElementById("selectedTags"),
+        summary: document.getElementById("summary"),
+        charCount: document.getElementById("charCount"),
+        countPill: document.getElementById("countPill"),
+        copyBtn: document.getElementById("copyBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        sampleBtn: document.getElementById("sampleBtn"),
+        addCustomBtn: document.getElementById("addCustomBtn"),
+        toast: document.getElementById("toast"),
+      };
+
+      /** @type {{ingredients: typeof DEFAULT_INGREDIENTS, selectedIds: string[], summaryOverride?: string}} */
+      let state = loadState();
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [] };
+          const parsed = JSON.parse(raw);
+          const ingredients = Array.isArray(parsed.ingredients) ? parsed.ingredients : DEFAULT_INGREDIENTS.slice();
+          const selectedIds = Array.isArray(parsed.selectedIds) ? parsed.selectedIds : [];
+          const summaryOverride = typeof parsed.summaryOverride === "string" ? parsed.summaryOverride : undefined;
+          return { ingredients, selectedIds, summaryOverride };
+        } catch {
+          return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [] };
+        }
+      }
+
+      function saveState(partial = {}) {
+        state = { ...state, ...partial };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function normalized(s) {
+        return String(s || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/\p{Diacritic}/gu, "");
+      }
+
+      function getSelectedIngredients() {
+        const selectedSet = new Set(state.selectedIds);
+        return state.ingredients.filter((i) => selectedSet.has(i.id));
+      }
+
+      function buildSummaryText() {
+        const selected = getSelectedIngredients();
+        const mains = selected.filter((x) => x.kind === "main").map((x) => x.name);
+        const sides = selected.filter((x) => x.kind === "side").map((x) => x.name);
+
+        const lines = [];
+        lines.push("Order:");
+        lines.push(`- Mains: ${mains.length ? mains.join(", ") : "(none selected)"}`);
+        lines.push(`- Sides: ${sides.length ? sides.join(", ") : "(none selected)"}`);
+        lines.push("");
+        lines.push("Notes:");
+        lines.push("- (add bread/toast/cut-in-half/etc.)");
+        return lines.join("\n");
+      }
+
+      function render() {
+        const q = normalized(els.searchInput.value);
+        const selectedSet = new Set(state.selectedIds);
+        const ingredients = state.ingredients
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+          .filter((i) => (q ? normalized(i.name + " " + (i.hint || "")).includes(q) : true));
+
+        const mains = ingredients.filter((i) => i.kind === "main");
+        const sides = ingredients.filter((i) => i.kind === "side");
+
+        els.mainsList.innerHTML = mains.map((i) => itemHtml(i, selectedSet.has(i.id))).join("");
+        els.sidesList.innerHTML = sides.map((i) => itemHtml(i, selectedSet.has(i.id))).join("");
+
+        const selected = getSelectedIngredients().sort((a, b) => a.name.localeCompare(b.name));
+        els.selectedTags.innerHTML = selected.length
+          ? selected.map((i) => tagHtml(i)).join("")
+          : `<div class="small">No ingredients selected yet. Use the checkboxes to build your sandwich.</div>`;
+
+        const selectedMains = selected.filter((x) => x.kind === "main").length;
+        const selectedSides = selected.filter((x) => x.kind === "side").length;
+        els.countPill.textContent = `${selectedMains} mains • ${selectedSides} sides`;
+
+        const computed = buildSummaryText();
+        if (!els.summary.matches(":focus")) {
+          els.summary.value = typeof state.summaryOverride === "string" ? state.summaryOverride : computed;
+        }
+        els.charCount.textContent = `${els.summary.value.length} characters`;
+      }
+
+      function itemHtml(i, checked) {
+        const hint = i.hint ? `<div class="itemHint">${escapeHtml(i.hint)}</div>` : "";
+        return `
+          <label class="item" data-id="${escapeAttr(i.id)}" role="listitem">
+            <span class="itemLeft">
+              <input class="check" type="checkbox" ${checked ? "checked" : ""} />
+              <span style="min-width:0">
+                <div class="itemName">${escapeHtml(i.name)}</div>
+                ${hint}
+              </span>
+            </span>
+          </label>
+        `;
+      }
+
+      function tagHtml(i) {
+        const kindBadge =
+          i.kind === "main"
+            ? `<span class="pill" style="padding:4px 8px;border-color:rgba(124,92,255,.35);background:rgba(124,92,255,.15)"><b>Main</b></span>`
+            : `<span class="pill" style="padding:4px 8px;border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.12)"><b>Side</b></span>`;
+
+        return `
+          <span class="tag" data-id="${escapeAttr(i.id)}">
+            ${kindBadge}
+            <span>${escapeHtml(i.name)}</span>
+            <button type="button" aria-label="Remove ${escapeAttr(i.name)}">×</button>
+          </span>
+        `;
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function escapeAttr(s) {
+        return escapeHtml(s).replaceAll("`", "&#096;");
+      }
+
+      function showToast(message) {
+        els.toast.textContent = message;
+        els.toast.classList.add("show");
+        window.clearTimeout(showToast._t);
+        showToast._t = window.setTimeout(() => els.toast.classList.remove("show"), 1400);
+      }
+
+      function toggleIngredient(id) {
+        const set = new Set(state.selectedIds);
+        if (set.has(id)) set.delete(id);
+        else set.add(id);
+        saveState({ selectedIds: Array.from(set) });
+        saveState({ summaryOverride: undefined });
+        render();
+      }
+
+      function removeIngredient(id) {
+        const set = new Set(state.selectedIds);
+        set.delete(id);
+        saveState({ selectedIds: Array.from(set) });
+        saveState({ summaryOverride: undefined });
+        render();
+      }
+
+      function clearAll() {
+        saveState({ selectedIds: [], summaryOverride: undefined });
+        render();
+        showToast("Cleared.");
+      }
+
+      async function copySummary() {
+        const text = els.summary.value.trim();
+        if (!text) {
+          showToast("Nothing to copy.");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("Copied.");
+        } catch {
+          els.summary.focus();
+          els.summary.select();
+          showToast("Select + copy (⌘C).");
+        }
+      }
+
+      function loadExample() {
+        const example = ["grilled-chicken", "green-pesto", "provolone", "tomato", "banana-peppers"];
+        saveState({ selectedIds: example, summaryOverride: undefined });
+        render();
+        showToast("Example loaded.");
+      }
+
+      function addCustom() {
+        const raw = window.prompt("Add a custom ingredient name (it will be selectable):");
+        const name = (raw || "").trim();
+        if (!name) return;
+
+        const kindRaw = window.prompt('Type "main" or "side" for this ingredient:', "side");
+        const kind = String(kindRaw || "").trim().toLowerCase() === "main" ? "main" : "side";
+
+        const idBase = normalized(name)
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 48);
+        const id = `${idBase || "custom"}-${Math.random().toString(16).slice(2, 8)}`;
+
+        saveState({ ingredients: state.ingredients.concat([{ id, name, kind }]) });
+        toggleIngredient(id);
+        showToast("Added.");
+      }
+
+      function initPresets() {
+        els.presetSelect.innerHTML =
+          `<option value="">Load a Lioni’s preset (by #)...</option>` +
+          PRESETS.map((p) => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.label)}</option>`).join("");
+      }
+
+      function applyPreset() {
+        const id = els.presetSelect.value;
+        if (!id) {
+          showToast("Pick a preset first.");
+          return;
+        }
+        const preset = PRESETS.find((p) => p.id === id);
+        if (!preset) return;
+
+        const available = new Set(state.ingredients.map((i) => i.id));
+        const selectedIds = preset.ingredientIds.filter((x) => available.has(x));
+
+        saveState({ selectedIds, summaryOverride: undefined });
+        render();
+        showToast(`Applied ${preset.label.split("—")[0].trim()}.`);
+      }
+
+      // Events
+      els.searchInput.addEventListener("input", () => render());
+
+      els.mainsList.addEventListener("change", (e) => {
+        const label = e.target.closest("label[data-id]");
+        if (!label) return;
+        toggleIngredient(label.getAttribute("data-id"));
+      });
+      els.sidesList.addEventListener("change", (e) => {
+        const label = e.target.closest("label[data-id]");
+        if (!label) return;
+        toggleIngredient(label.getAttribute("data-id"));
+      });
+
+      els.selectedTags.addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+        const tag = e.target.closest(".tag[data-id]");
+        if (!tag) return;
+        removeIngredient(tag.getAttribute("data-id"));
+      });
+
+      els.summary.addEventListener("input", () => {
+        saveState({ summaryOverride: els.summary.value });
+        els.charCount.textContent = `${els.summary.value.length} characters`;
+      });
+
+      els.copyBtn.addEventListener("click", () => copySummary());
+      els.clearBtn.addEventListener("click", () => clearAll());
+      els.sampleBtn.addEventListener("click", () => loadExample());
+      els.addCustomBtn.addEventListener("click", () => addCustom());
+      els.applyPresetBtn.addEventListener("click", () => applyPreset());
+
+      // First render
+      initPresets();
+      render();
+    </script>
+  </body>
+</html>
