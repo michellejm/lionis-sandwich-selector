@@ -452,6 +452,60 @@
         min-width: 18px;
         text-align: center;
       }
+
+      .aiSection {
+        margin-bottom: 14px;
+      }
+
+      .aiInputRow {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .aiInputRow input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--ink);
+        padding: 10px 12px;
+        outline: none;
+      }
+
+      .aiInputRow input:focus {
+        border-color: rgba(198, 27, 27, 0.5);
+        box-shadow: 0 0 0 4px rgba(198, 27, 27, 0.18);
+      }
+
+      .aiLabel {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .aiDivider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 12px 0;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+
+      .loading {
+        animation: pulse 1.2s ease infinite;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 6px 0;
+      }
     </style>
   </head>
   <body>
@@ -527,6 +581,13 @@
             </div>
           </div>
           <div class="panelBody">
+            <div id="describeSection" class="aiSection">
+              <div class="aiInputRow">
+                <input id="describeInput" type="text" placeholder="Describe what you want (e.g. spicy chicken with greens)…" />
+                <button id="findBtn" type="button">Ask AI</button>
+              </div>
+              <div id="aiResults"></div>
+            </div>
             <div id="recList" class="recList"></div>
             <div id="orderListEl" class="recList" style="display:none"></div>
           </div>
@@ -801,6 +862,10 @@
         tabOrder: document.getElementById("tabOrder"),
         orderBadge: document.getElementById("orderBadge"),
         recPanelTitle: document.getElementById("recPanelTitle"),
+        describeSection: document.getElementById("describeSection"),
+        describeInput: document.getElementById("describeInput"),
+        findBtn: document.getElementById("findBtn"),
+        aiResults: document.getElementById("aiResults"),
       };
 
       let currentTab = "sandwiches";
@@ -944,8 +1009,97 @@
         els.tabSandwiches.classList.toggle("active", tab === "sandwiches");
         els.tabOrder.classList.toggle("active", tab === "order");
         els.recList.style.display = tab === "sandwiches" ? "" : "none";
+        els.describeSection.style.display = tab === "sandwiches" ? "" : "none";
         els.orderListEl.style.display = tab === "order" ? "" : "none";
         els.recPanelTitle.textContent = tab === "sandwiches" ? "Sandwiches" : "Order list";
+      }
+
+      async function findByDescription() {
+        const description = els.describeInput.value.trim();
+        if (!description) return;
+
+        const BAKED_KEY = "__GEMINI_API_KEY__";
+        const API_KEY_STORAGE = "lioni-gemini-key";
+        let apiKey = BAKED_KEY.startsWith("__") ? localStorage.getItem(API_KEY_STORAGE) : BAKED_KEY;
+        if (!apiKey) {
+          apiKey = window.prompt("Enter your Gemini API key (free from aistudio.google.com — stored locally, never sent anywhere but Google):");
+          if (!apiKey) return;
+          localStorage.setItem(API_KEY_STORAGE, apiKey.trim());
+          apiKey = apiKey.trim();
+        }
+
+        els.findBtn.disabled = true;
+        els.aiResults.innerHTML = `<div class="loading">Finding matches…</div>`;
+
+        const sandwichList = PRESETS.map((p) => {
+          const ingredientNames = p.ingredientIds
+            .map((id) => { const ing = state.ingredients.find((i) => i.id === id); return ing ? ing.name : id; })
+            .join(", ");
+          return `ID:${p.id} | ${p.label} | ${ingredientNames}`;
+        }).join("\n");
+
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `You help customers pick from Lioni's Italian Heroes sandwich menu.\n\nCustomer says: "${description}"\n\nSandwiches:\n${sandwichList}\n\nReturn the IDs of the 2–4 sandwiches that best match the customer's description. Consider ingredients and flavor profile. Reply with ONLY a valid JSON array of ID strings — no explanation, no markdown. Example: ["65","32"]`,
+                }],
+              }],
+              generationConfig: { maxOutputTokens: 256 },
+            }),
+          });
+
+          if (res.status === 400 || res.status === 403) {
+            localStorage.removeItem(API_KEY_STORAGE);
+            throw new Error("Invalid API key — it has been cleared. Try again.");
+          }
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error?.message || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          const rawText = data.candidates[0].content.parts[0].text.trim();
+          const jsonText = rawText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+          const ids = JSON.parse(jsonText);
+          const suggestions = ids.map((id) => PRESETS.find((p) => p.id === String(id))).filter(Boolean);
+          renderAiSuggestions(suggestions);
+        } catch (err) {
+          els.aiResults.innerHTML = `<div class="small" style="color:var(--danger);padding:4px 0">Error: ${escapeHtml(err.message)}</div>`;
+        } finally {
+          els.findBtn.disabled = false;
+        }
+      }
+
+      function renderAiSuggestions(suggestions) {
+        if (!suggestions.length) {
+          els.aiResults.innerHTML = `<div class="small" style="padding:4px 0">No matches found — try rephrasing.</div>`;
+          return;
+        }
+        const selectedSet = new Set(state.selectedIds);
+        const items = suggestions.map((preset) => {
+          const chips = preset.ingredientIds.map((id) => {
+            const ing = state.ingredients.find((i) => i.id === id);
+            const name = ing ? ing.name : id;
+            const isSelected = selectedSet.has(id);
+            const style = isSelected
+              ? "background:rgba(15,138,58,.15);border-color:rgba(15,138,58,.4);color:var(--ink);font-weight:600"
+              : "background:rgba(20,20,20,.05);border-color:transparent;color:var(--faint)";
+            return `<span class="pill" style="padding:3px 8px;font-size:11px;${style}">${escapeHtml(name)}</span>`;
+          }).join("");
+          return `
+            <div class="recItem" style="flex-direction:column;align-items:flex-start;gap:6px;border-color:rgba(198,27,27,.22);background:rgba(198,27,27,.04)">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px">
+                <div style="font-weight:600;font-size:13px;min-width:0">${escapeHtml(preset.label)}</div>
+                <button class="addToOrderBtn primary" type="button" data-preset-id="${escapeAttr(preset.id)}" data-preset-label="${escapeAttr(preset.label)}" style="flex-shrink:0;border-radius:8px;padding:5px 10px;font-size:12px">+ Add</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>
+            </div>`;
+        }).join("");
+        els.aiResults.innerHTML = `<div class="aiLabel">AI suggestions</div><div class="recList" style="margin-bottom:0">${items}</div><hr class="aiDivider">`;
       }
 
       function addToOrder(presetId, label) {
@@ -1124,6 +1278,15 @@
       els.applyPresetBtn.addEventListener("click", () => applyPreset());
 
       els.tabSandwiches.addEventListener("click", () => switchTab("sandwiches"));
+
+      els.findBtn.addEventListener("click", () => findByDescription());
+      els.describeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") findByDescription(); });
+
+      els.aiResults.addEventListener("click", (e) => {
+        const btn = e.target.closest(".addToOrderBtn");
+        if (!btn) return;
+        addToOrder(btn.dataset.presetId, btn.dataset.presetLabel);
+      });
       els.tabOrder.addEventListener("click", () => switchTab("order"));
 
       els.recList.addEventListener("click", (e) => {
