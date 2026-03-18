@@ -1018,16 +1018,6 @@
         const description = els.describeInput.value.trim();
         if (!description) return;
 
-        const BAKED_KEY = "__GEMINI_API_KEY__";
-        const API_KEY_STORAGE = "lioni-gemini-key";
-        let apiKey = BAKED_KEY.startsWith("__") ? localStorage.getItem(API_KEY_STORAGE) : BAKED_KEY;
-        if (!apiKey) {
-          apiKey = window.prompt("Enter your Gemini API key (free from aistudio.google.com — stored locally, never sent anywhere but Google):");
-          if (!apiKey) return;
-          localStorage.setItem(API_KEY_STORAGE, apiKey.trim());
-          apiKey = apiKey.trim();
-        }
-
         els.findBtn.disabled = true;
         els.aiResults.innerHTML = `<div class="loading">Finding matches…</div>`;
 
@@ -1038,31 +1028,27 @@
           return `ID:${p.id} | ${p.label} | ${ingredientNames}`;
         }).join("\n");
 
+        const prompt = `You help customers pick from Lioni's Italian Heroes sandwich menu.\n\nCustomer says: "${description}"\n\nSandwiches:\n${sandwichList}\n\nReturn the IDs of the 2–4 sandwiches that best match the customer's description. Consider ingredients and flavor profile. Reply with ONLY a valid JSON array of ID strings — no explanation, no markdown. Example: ["65","32"]`;
+
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`, {
+          const res = await fetch("http://localhost:11434/v1/chat/completions", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: `You help customers pick from Lioni's Italian Heroes sandwich menu.\n\nCustomer says: "${description}"\n\nSandwiches:\n${sandwichList}\n\nReturn the IDs of the 2–4 sandwiches that best match the customer's description. Consider ingredients and flavor profile. Reply with ONLY a valid JSON array of ID strings — no explanation, no markdown. Example: ["65","32"]`,
-                }],
-              }],
-              generationConfig: { maxOutputTokens: 256 },
+              model: "llama3.2:1b",
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: 256,
+              stream: false,
             }),
           });
 
-          if (res.status === 400 || res.status === 403) {
-            localStorage.removeItem(API_KEY_STORAGE);
-            throw new Error("Invalid API key — it has been cleared. Try again.");
-          }
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.error?.message || `HTTP ${res.status}`);
+            throw new Error(err.error?.message || `HTTP ${res.status} — is Ollama running?`);
           }
 
           const data = await res.json();
-          const rawText = data.candidates[0].content.parts[0].text.trim();
+          const rawText = data.choices[0].message.content.trim();
           const jsonText = rawText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
           const ids = JSON.parse(jsonText);
           const suggestions = ids.map((id) => PRESETS.find((p) => p.id === String(id))).filter(Boolean);
