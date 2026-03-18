@@ -333,33 +333,6 @@
         color: rgba(20, 20, 20, 0.92);
       }
 
-      textarea {
-        width: 100%;
-        resize: vertical;
-        min-height: 160px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.9);
-        color: var(--ink);
-        padding: 12px;
-        outline: none;
-        line-height: 1.35;
-      }
-
-      textarea:focus {
-        border-color: rgba(198, 27, 27, 0.5);
-        box-shadow: 0 0 0 4px rgba(198, 27, 27, 0.18);
-      }
-
-      .footerRow {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-      }
-
       .small {
         color: var(--muted);
         font-size: 12px;
@@ -385,6 +358,100 @@
       .toast.show {
         opacity: 1;
       }
+
+      .recommendations {
+        margin-top: 14px;
+      }
+
+      .recList {
+        display: grid;
+        gap: 8px;
+      }
+
+      .recItem {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(20, 20, 20, 0.1);
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 4px;
+      }
+
+      .tabBtn {
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 12px;
+        background: transparent;
+        border-color: transparent;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .tabBtn.active {
+        background: rgba(15, 138, 58, 0.12);
+        border-color: rgba(15, 138, 58, 0.3);
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .orderBadge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent2);
+        color: white;
+        border-radius: 999px;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .orderItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(20, 20, 20, 0.1);
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .qtyControls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .qtyBtn {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border-radius: 6px;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .qtyNum {
+        font-size: 13px;
+        font-weight: 600;
+        min-width: 18px;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
@@ -395,7 +462,6 @@
           <p class="subtitle">Pick mains and sides, then copy a clean order summary.</p>
         </div>
         <div class="actions">
-          <button id="copyBtn" class="primary" type="button">Copy summary</button>
           <button id="clearBtn" class="danger" type="button">Clear</button>
           <button id="sampleBtn" class="ghost" type="button">Load example</button>
         </div>
@@ -448,17 +514,21 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="recPanel">
           <div class="panelHeader">
-            <h2>Order summary</h2>
-            <span class="pill"><b>Tip</b> You can edit the text below</span>
+            <h2 id="recPanelTitle">Sandwiches</h2>
+            <div class="tabs">
+              <button id="tabSandwiches" class="tabBtn active" type="button">
+                Sandwiches <span id="recCountPill" class="pill" style="padding:2px 7px;font-size:11px" aria-live="polite"></span>
+              </button>
+              <button id="tabOrder" class="tabBtn" type="button">
+                Order list <span id="orderBadge" class="orderBadge" style="display:none"></span>
+              </button>
+            </div>
           </div>
           <div class="panelBody">
-            <textarea id="summary" spellcheck="false"></textarea>
-            <div class="footerRow">
-              <div class="small" id="savedHint">Auto-saves in this browser.</div>
-              <div class="small" id="charCount"></div>
-            </div>
+            <div id="recList" class="recList"></div>
+            <div id="orderListEl" class="recList" style="display:none"></div>
           </div>
         </section>
       </div>
@@ -529,35 +599,186 @@
         { id: "vodka-sauce", name: "Vodka sauce", hint: "extra sauce", kind: "side" },
         { id: "provolone", name: "Provolone", hint: "cheese", kind: "side" },
         { id: "extra-mozzarella", name: "Extra mozzarella", hint: "extra cheese", kind: "side" },
+        // Additional mains
+        { id: "veal", name: "Veal cutlet", hint: "milk-fed veal", kind: "main" },
+        { id: "roast-pork", name: "Roast pork", hint: "slow roasted", kind: "main" },
+        { id: "sicilian-salami", name: "Sicilian salami", hint: "spicy", kind: "main" },
+        { id: "genoa-salami", name: "Genoa salami", hint: "mild", kind: "main" },
+        { id: "bologna", name: "Bologna", hint: "classic deli", kind: "main" },
+        { id: "bresaola", name: "Bresaola", hint: "cured beef", kind: "main" },
+        { id: "pepper-ham", name: "Pepper ham", hint: "spicy ham", kind: "main" },
+        { id: "olive-loaf", name: "Olive loaf", hint: "deli meat", kind: "main" },
+        { id: "honey-turkey", name: "Honey turkey", hint: "sweet roasted", kind: "main" },
+        { id: "steak", name: "Steak", hint: "Thursdays only", kind: "main" },
+        { id: "potatoes-eggs", name: "Potatoes & eggs", hint: "Italian classic", kind: "main" },
+        { id: "shrimp", name: "Shrimp", hint: "parmigiana, Fridays only", kind: "main" },
+        // Additional sides
+        { id: "sun-dried-tomatoes", name: "Sun-dried tomatoes", hint: "sweet/tangy", kind: "side" },
+        { id: "swiss-cheese", name: "Swiss cheese", hint: "mild cheese", kind: "side" },
+        { id: "white-american-cheese", name: "White american cheese", hint: "melty", kind: "side" },
+        { id: "fresh-basil", name: "Fresh basil", hint: "herb", kind: "side" },
+        { id: "gravy", name: "Gravy", hint: "brown gravy", kind: "side" },
+        { id: "bacon", name: "Bacon", hint: "crispy", kind: "side" },
+        { id: "smoked-mozzarella", name: "Smoked mozzarella", hint: "Lioni smoked mozz", kind: "side" },
       ];
 
       /** @type {{id: string, label: string, ingredientIds: string[]}[]} */
       const PRESETS = [
-        {
-          id: "11",
-          label: "#11 Vince Lombardi — roasted peppers, fresh mozz, green pesto, olive oil, black pepper",
-          ingredientIds: ["roasted-peppers", "mozzarella", "green-pesto", "olive-oil", "black-pepper"],
-        },
-        {
-          id: "21",
-          label: "#21 Jerry Vale — prosciutto, fresh mozz, pesto, olive oil, black pepper",
-          ingredientIds: ["prosciutto", "mozzarella", "green-pesto", "olive-oil", "black-pepper"],
-        },
-        {
-          id: "32",
-          label: "#32 Dan Marino — grilled chicken, fresh mozz, roasted peppers, olive oil, vinegar, salt, pepper",
-          ingredientIds: ["grilled-chicken", "mozzarella", "roasted-peppers", "olive-oil", "vinegar", "salt", "black-pepper"],
-        },
-        {
-          id: "65",
-          label: "#65 Danny Aiello — grilled chicken, broccoli rabe, fresh mozz, olive oil, salt, pepper",
-          ingredientIds: ["grilled-chicken", "broccoli-rabe", "mozzarella", "olive-oil", "salt", "black-pepper"],
-        },
-        {
-          id: "66",
-          label: "#66 Marco Polo — chicken cutlet, broccoli rabe, fresh mozz, olive oil, salt, pepper",
-          ingredientIds: ["fried-chicken-cutlet", "broccoli-rabe", "mozzarella", "olive-oil", "salt", "black-pepper"],
-        },
+        { id: "1",   label: "#1 Frank Sinatra",                    ingredientIds: ["salami", "mozzarella", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "2",   label: "#2 Dean Martin",                      ingredientIds: ["prosciutto", "mozzarella", "olive-oil", "black-pepper"] },
+        { id: "3",   label: "#3 Perry Como",                       ingredientIds: ["ham", "mozzarella", "fresh-basil", "sun-dried-tomatoes", "olive-oil", "salt", "black-pepper"] },
+        { id: "4",   label: "#4 The Italiano",                     ingredientIds: ["mozzarella", "tomato", "fresh-basil", "olive-oil", "salt", "black-pepper"] },
+        { id: "5",   label: "#5 Michael Angarano",                 ingredientIds: ["ham", "salami", "swiss-cheese", "olive-oil", "basil-mix"] },
+        { id: "6",   label: "#6 Joe DiMaggio",                     ingredientIds: ["turkey", "mozzarella", "roasted-peppers", "olive-oil", "oregano", "black-pepper"] },
+        { id: "7",   label: "#7 Rocky Marciano",                   ingredientIds: ["capicola", "ham", "mozzarella", "sun-dried-tomatoes", "vinegar", "olive-oil", "oregano", "salt", "black-pepper"] },
+        { id: "8",   label: "#8 Bensonhurst Special",              ingredientIds: ["capicola", "white-american-cheese", "stuffed-peppers"] },
+        { id: "9",   label: "#9 Jerry Ferrara",                    ingredientIds: ["salami", "mozzarella", "roasted-peppers", "olive-oil", "salt", "black-pepper"] },
+        { id: "10",  label: "#10 Mario Lanza",                     ingredientIds: ["mortadella", "mozzarella", "lettuce", "black-pepper"] },
+        { id: "11",  label: "#11 Vince Lombardi",                  ingredientIds: ["roasted-peppers", "mozzarella", "green-pesto", "olive-oil", "black-pepper"] },
+        { id: "12",  label: "#12 Sophia Loren",                    ingredientIds: ["prosciutto", "mozzarella", "stuffed-peppers", "lettuce", "olive-oil", "salt", "black-pepper"] },
+        { id: "13",  label: "#13 Yogi Berra",                      ingredientIds: ["ham", "bologna", "white-american-cheese", "lettuce", "mayo", "tomato"] },
+        { id: "14",  label: "#14 Alfonso Supremo",                 ingredientIds: ["capicola", "mozzarella", "tomato", "fresh-basil", "oregano", "olive-oil", "salt", "black-pepper"] },
+        { id: "15",  label: "#15 My Italian Honey",                ingredientIds: ["honey-turkey", "mozzarella", "lettuce", "tomato", "vinegar", "olive-oil", "salt", "black-pepper"] },
+        { id: "16",  label: "#16 Phil Rizzutto",                   ingredientIds: ["roast-beef", "mozzarella", "lettuce", "mayo", "salt", "black-pepper"] },
+        { id: "17",  label: "#17 Vinny Testaverde",                ingredientIds: ["olive-loaf", "sopressata", "white-american-cheese", "lettuce", "mayo"] },
+        { id: "18",  label: "#18 Joe Torre",                       ingredientIds: ["italian-sausage", "olive-oil", "vinegar", "lettuce", "salt", "black-pepper", "oregano"] },
+        { id: "19",  label: "#19 Mike Piazza",                     ingredientIds: ["roast-pork", "smoked-mozzarella", "olive-oil", "black-pepper"] },
+        { id: "20",  label: "#20 Robert DeNiro",                   ingredientIds: ["pepper-ham", "swiss-cheese", "tomato", "mayo"] },
+        { id: "21",  label: "#21 Jerry Vale",                      ingredientIds: ["prosciutto", "mozzarella", "green-pesto", "olive-oil", "black-pepper"] },
+        { id: "23",  label: "#23 Ernest Borgnine",                 ingredientIds: ["pepperoni", "mozzarella", "roasted-peppers", "olive-oil", "lettuce"] },
+        { id: "24",  label: "#24 Kobe Bryant",                     ingredientIds: ["bologna", "white-american-cheese", "ham", "mustard"] },
+        { id: "25",  label: "#25 Louie Prima",                     ingredientIds: ["capicola", "salami", "pepperoni", "swiss-cheese", "provolone", "stuffed-peppers", "mustard"] },
+        { id: "26",  label: "#26 Connie Francis",                  ingredientIds: ["prosciutto", "mozzarella", "arugula", "balsamic-vinegar"] },
+        { id: "27",  label: "#27 Gina Lollobrigida",               ingredientIds: ["mozzarella", "tomato", "arugula", "fresh-basil", "olive-oil", "oregano", "salt", "black-pepper"] },
+        { id: "28",  label: "#28 Anna Magnani",                    ingredientIds: ["salami", "provolone", "arugula", "sun-dried-tomatoes", "olive-oil", "oregano", "black-pepper"] },
+        { id: "29",  label: "#29 The Pavarotti",                   ingredientIds: ["meatballs", "mozzarella"] },
+        { id: "30",  label: "#30 Tommy Lasorda",                   ingredientIds: ["prosciutto", "mozzarella", "tomato", "olive-oil", "oregano", "salt", "fresh-basil"] },
+        { id: "31",  label: "#31 Joe Montana",                     ingredientIds: ["capicola", "provolone", "lettuce", "tomato", "mustard", "mayo"] },
+        { id: "32",  label: "#32 Dan Marino",                      ingredientIds: ["grilled-chicken", "mozzarella", "roasted-peppers", "olive-oil", "vinegar", "salt", "black-pepper"] },
+        { id: "33",  label: "#33 Tony Bennett",                    ingredientIds: ["italian-sausage", "bruschetta"] },
+        { id: "34",  label: "#34 Rocky Graziano",                  ingredientIds: ["italian-sausage", "bruschetta", "mozzarella"] },
+        { id: "35",  label: "#35 Mario Andretti",                  ingredientIds: ["fried-chicken-cutlet", "mozzarella"] },
+        { id: "36",  label: "#36 Phil Esposito",                   ingredientIds: ["potatoes-eggs"] },
+        { id: "37",  label: "#37 Lou Carnesecca",                  ingredientIds: ["turkey", "white-american-cheese", "tomato", "mustard"] },
+        { id: "38",  label: "#38 Annette Funicello",               ingredientIds: ["bologna", "mozzarella", "lettuce", "mayo", "salt", "black-pepper"] },
+        { id: "39",  label: "#39 Bill Gallo",                      ingredientIds: ["tuna", "mozzarella", "lettuce", "tomato"] },
+        { id: "40",  label: "#40 Joe Pesci",                       ingredientIds: ["tuna", "lettuce", "tomato", "onions"] },
+        { id: "41",  label: "#41 Nonna/Nonno",                     ingredientIds: ["veal", "romano-cheese"] },
+        { id: "42",  label: "#42 Al Martino",                      ingredientIds: ["sopressata", "bruschetta", "mozzarella"] },
+        { id: "43",  label: "#43 Vic Damone",                      ingredientIds: ["sopressata", "mozzarella", "red-pesto"] },
+        { id: "44",  label: "#44 Paul Sorvino",                    ingredientIds: ["broccoli-rabe", "italian-sausage"] },
+        { id: "45",  label: "#45 Pat Cooper",                      ingredientIds: ["sicilian-salami", "swiss-cheese", "mustard"] },
+        { id: "46",  label: "#46 Dom DeLuise",                     ingredientIds: ["sopressata", "ham", "provolone", "lettuce", "tomato", "oil-vinegar"] },
+        { id: "47",  label: "#47 Leonardo Da Vinci",               ingredientIds: ["bresaola", "arugula", "olive-oil", "shaved-reggiano", "black-pepper", "oregano"] },
+        { id: "48",  label: "#48 Don Amici",                       ingredientIds: ["sicilian-salami", "genoa-salami", "mozzarella"] },
+        { id: "49",  label: "#49 Sylvester Stallone",              ingredientIds: ["italian-sausage", "sweet-peppers"] },
+        { id: "50",  label: "#50 Jake La Motta",                   ingredientIds: ["turkey", "mozzarella", "gravy"] },
+        { id: "51",  label: "#51 Lou Monte",                       ingredientIds: ["mozzarella", "arugula", "roasted-peppers"] },
+        { id: "52",  label: "#52 Lee Iacocca",                     ingredientIds: ["roast-beef", "mozzarella", "gravy"] },
+        { id: "53",  label: "#53 Giovanni Da Verrazano",           ingredientIds: ["eggplant", "mozzarella"] },
+        { id: "54",  label: "#54 Maestro",                         ingredientIds: ["fried-chicken-cutlet", "mozzarella", "bacon", "bbq-sauce"] },
+        { id: "55",  label: "#55 John DiSpirito",                  ingredientIds: ["ham", "salami", "provolone", "shaved-reggiano", "olive-oil", "salt", "black-pepper"] },
+        { id: "56",  label: "#56 Vinny Vella",                     ingredientIds: ["salami", "provolone", "olive-oil", "lettuce", "tomato"] },
+        { id: "57",  label: "#57 Vincent Gardenia",                ingredientIds: ["honey-turkey", "capicola", "mozzarella", "tomato", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "58",  label: "#58 Teddy Randazzo",                  ingredientIds: ["mortadella", "ricotta", "salt", "black-pepper"] },
+        { id: "59",  label: "#59 John Franco",                     ingredientIds: ["prosciutto", "mortadella", "smoked-mozzarella", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "60",  label: "#60 Marisa Tomei",                    ingredientIds: ["eggplant", "mozzarella", "mushroom-stuffing"] },
+        { id: "61",  label: "#61 Tony Danza",                      ingredientIds: ["sicilian-salami", "capicola", "mozzarella", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "62",  label: "#62 Alyssa Milano",                   ingredientIds: ["fried-chicken-cutlet", "prosciutto", "mozzarella", "basil-mix"] },
+        { id: "63",  label: "#63 Danny DeVito",                    ingredientIds: ["ham", "sopressata", "white-american-cheese", "honey-mustard", "lettuce", "tomato"] },
+        { id: "64",  label: "#64 Frankie Valli",                   ingredientIds: ["sopressata", "roast-beef", "white-american-cheese", "balsamic-vinegar"] },
+        { id: "65",  label: "#65 Danny Aiello",                    ingredientIds: ["grilled-chicken", "broccoli-rabe", "mozzarella", "olive-oil", "salt", "black-pepper"] },
+        { id: "66",  label: "#66 Marco Polo",                      ingredientIds: ["fried-chicken-cutlet", "broccoli-rabe", "mozzarella", "olive-oil", "salt", "black-pepper"] },
+        { id: "67",  label: "#67 Amerigo Vespucci",                ingredientIds: ["roast-beef", "white-american-cheese", "lettuce", "tomato", "mayo"] },
+        { id: "68",  label: "#68 William Paca",                    ingredientIds: ["turkey", "roast-beef", "jalapenos", "hot-sauce"] },
+        { id: "69",  label: "#69 Cristoforo Columbo",              ingredientIds: ["roast-beef", "sopressata", "mozzarella", "italian-sausage", "stuffed-mushrooms"] },
+        { id: "70",  label: "#70 Giovanni Caboto",                 ingredientIds: ["fried-chicken-cutlet", "provolone", "balsamic-vinegar", "roasted-peppers", "salt", "black-pepper"] },
+        { id: "71",  label: "#71 Marty Golden",                    ingredientIds: ["fried-chicken-cutlet", "mozzarella", "roasted-peppers", "balsamic-vinegar"] },
+        { id: "72",  label: "#72 Michael Angelo",                  ingredientIds: ["capicola", "mozzarella", "lettuce", "tomato", "olive-oil", "salt", "black-pepper"] },
+        { id: "73",  label: "#73 Rudolph Valentino",               ingredientIds: ["sopressata", "jalapenos", "stuffed-peppers", "hot-sauce"] },
+        { id: "74",  label: "#74 Martin Scorsese",                 ingredientIds: ["italian-sausage", "white-american-cheese"] },
+        { id: "75",  label: "#75 Mike Eruzione",                   ingredientIds: ["turkey", "eggplant", "white-american-cheese"] },
+        { id: "76",  label: "#76 Bobby Darin",                     ingredientIds: ["roast-beef", "sopressata", "white-american-cheese"] },
+        { id: "77",  label: "#77 Frankie Laine",                   ingredientIds: ["honey-turkey", "white-american-cheese", "bbq-sauce"] },
+        { id: "78",  label: "#78 Joe Paterno",                     ingredientIds: ["grilled-chicken", "mozzarella", "eggplant", "honey-mustard"] },
+        { id: "79",  label: "#79 Francis Ford Coppola",            ingredientIds: ["meatballs", "lettuce", "vinegar", "salt", "black-pepper"] },
+        { id: "80",  label: "#80 Joseph Barbera",                  ingredientIds: ["steak", "mozzarella", "sweet-peppers", "onions"] },
+        { id: "81",  label: "#81 Jason Giambi",                    ingredientIds: ["prosciutto", "pepper-ham", "salami", "swiss-cheese", "olive-oil", "oregano"] },
+        { id: "82",  label: "#82 Primo Carnera",                   ingredientIds: ["pepperoni", "provolone", "mustard", "stuffed-peppers"] },
+        { id: "83",  label: "#83 Ray Romano",                      ingredientIds: ["turkey", "lettuce", "tomato", "onions", "olive-oil", "vinegar", "salt", "black-pepper"] },
+        { id: "84",  label: "#84 Ernest & Julio Gallo",            ingredientIds: ["roast-pork", "white-american-cheese", "lettuce", "tomato", "salt", "black-pepper"] },
+        { id: "85",  label: "#85 Enrico Caruso",                   ingredientIds: ["meatballs", "ricotta", "romano-cheese", "basil-mix"] },
+        { id: "86",  label: "#86 Ida Lupino",                      ingredientIds: ["mortadella", "provolone", "lettuce", "tomato", "olive-oil", "vinegar", "salt", "black-pepper"] },
+        { id: "87",  label: "#87 Connie Stevens",                  ingredientIds: ["shrimp", "mozzarella"] },
+        { id: "88",  label: "#88 Bruno Sammartino",                ingredientIds: ["eggplant", "ricotta", "salt", "black-pepper", "fresh-basil", "sun-dried-tomatoes"] },
+        { id: "89",  label: "#89 Steve Schirripa",                 ingredientIds: ["salami", "provolone", "roasted-peppers"] },
+        { id: "90",  label: "#90 Tony LoBianco",                   ingredientIds: ["roast-beef", "stuffed-mushrooms", "mozzarella", "gravy", "salt", "black-pepper"] },
+        { id: "91",  label: "#91 Andre Bocelli",                   ingredientIds: ["italian-sausage", "ricotta", "tomato", "romano-cheese"] },
+        { id: "92",  label: "#92 Willie Pep",                      ingredientIds: ["sopressata", "white-american-cheese", "mushroom-stuffing"] },
+        { id: "93",  label: "#93 Joey Fatone",                     ingredientIds: ["bologna", "pepperoni", "white-american-cheese", "mustard"] },
+        { id: "94",  label: "#94 Mario Bartilomo",                 ingredientIds: ["ham", "eggplant", "sopressata", "white-american-cheese", "mozzarella"] },
+        { id: "95",  label: "#95 Opie & Anthony",                  ingredientIds: ["fried-chicken-cutlet", "sopressata", "provolone", "stuffed-peppers"] },
+        { id: "96",  label: "#96 Charloots DiSalvo/Jack Vaccaro",  ingredientIds: ["fried-chicken-cutlet", "italian-sausage", "white-american-cheese", "gravy"] },
+        { id: "97",  label: "#97 Vito Antuofermo",                 ingredientIds: ["roast-beef", "ham", "white-american-cheese", "mustard", "honey-mustard"] },
+        { id: "98",  label: "#98 Guy Lombardo",                    ingredientIds: ["ham", "mortadella", "bologna", "mozzarella", "basil-mix"] },
+        { id: "99",  label: "#99 Chazz Palminteri",                ingredientIds: ["veal", "mozzarella", "bruschetta"] },
+        { id: "100", label: "#100 Lee Mazzilli",                   ingredientIds: ["grilled-chicken", "white-american-cheese", "mushroom-stuffing"] },
+        { id: "101", label: "#101 San Gennaro",                    ingredientIds: ["italian-sausage", "roast-pork", "mozzarella", "basil-mix"] },
+        { id: "102", label: "#102 Tony Siragusa",                  ingredientIds: ["sicilian-salami", "genoa-salami", "ham", "mozzarella", "stuffed-peppers"] },
+        { id: "103", label: "#103 Little Italy",                   ingredientIds: ["salami", "provolone", "mortadella", "capicola", "lettuce", "tomato", "oil-vinegar"] },
+        { id: "105", label: "#105 John Travolta",                  ingredientIds: ["sopressata", "provolone", "balsamic-vinegar", "basil-mix"] },
+        { id: "106", label: "#106 Lou Costello",                   ingredientIds: ["prosciutto", "mozzarella", "basil-mix", "stuffed-peppers", "romano-cheese"] },
+        { id: "107", label: "#107 Alan Alda",                      ingredientIds: ["roast-beef", "sopressata", "mozzarella", "white-american-cheese", "bruschetta"] },
+        { id: "108", label: "#108 Al Pacino",                      ingredientIds: ["fried-chicken-cutlet", "ham", "balsamic-vinegar", "stuffed-peppers", "basil-mix", "mozzarella", "white-american-cheese"] },
+        { id: "109", label: "#109 Arthur Mercante",                ingredientIds: ["mortadella", "fried-chicken-cutlet", "ham", "horseradish", "mayo"] },
+        { id: "110", label: "#110 Angelo Dundee",                  ingredientIds: ["capicola", "prosciutto", "olive-loaf", "mozzarella", "bruschetta", "balsamic-vinegar"] },
+        { id: "111", label: "#111 Leonardo DiCaprio",              ingredientIds: ["eggplant", "roast-beef", "mozzarella", "white-american-cheese", "bruschetta", "sun-dried-tomatoes", "stuffed-peppers", "balsamic-vinegar"] },
+        { id: "112", label: "#112 Tami-Maurello",                  ingredientIds: ["ham", "roast-beef", "mozzarella", "honey-mustard"] },
+        { id: "113", label: "#113 Dick Vitale",                    ingredientIds: ["ham", "roast-beef", "white-american-cheese", "mozzarella", "pickles", "mayo", "horseradish"] },
+        { id: "114", label: "#114 Jimmy Valvano",                  ingredientIds: ["fried-chicken-cutlet", "sweet-peppers", "stuffed-peppers", "basil-mix", "balsamic-vinegar"] },
+        { id: "115", label: "#115 Al Michaels",                    ingredientIds: ["prosciutto", "capicola", "stuffed-peppers", "sun-dried-tomatoes", "romano-cheese", "mozzarella"] },
+        { id: "116", label: "#116 Lou Ferrigno",                   ingredientIds: ["grilled-chicken", "prosciutto", "sun-dried-tomatoes", "mozzarella", "bruschetta"] },
+        { id: "117", label: "#117 Peter Abbate",                   ingredientIds: ["prosciutto", "mozzarella", "basil-mix"] },
+        { id: "118", label: "#118 Richard Conte",                  ingredientIds: ["fried-chicken-cutlet", "roast-beef", "mortadella", "mozzarella", "basil-mix"] },
+        { id: "119", label: "#119 Eddie Arcardo",                  ingredientIds: ["fried-chicken-cutlet", "salami", "ham", "olive-oil", "basil-mix", "mozzarella", "sun-dried-tomatoes", "balsamic-vinegar"] },
+        { id: "120", label: "#120 Arturo Toscani",                 ingredientIds: ["eggplant", "capicola", "basil-mix", "white-american-cheese"] },
+        { id: "121", label: "#121 John Basilone",                  ingredientIds: ["prosciutto", "ricotta", "mozzarella", "bruschetta"] },
+        { id: "122", label: "#122 Frank Capra",                    ingredientIds: ["prosciutto", "ricotta", "mozzarella", "sweet-peppers"] },
+        { id: "123", label: "#123 Marie Rossi",                    ingredientIds: ["fried-chicken-cutlet", "white-american-cheese", "stuffed-peppers"] },
+        { id: "124", label: "#124 Charles Atlas",                  ingredientIds: ["eggplant", "prosciutto", "basil-mix", "mozzarella", "romano-cheese", "balsamic-vinegar"] },
+        { id: "125", label: "#125 Tony Tantillo",                  ingredientIds: ["prosciutto", "capicola", "mozzarella", "basil-mix", "balsamic-vinegar"] },
+        { id: "126", label: "#126 Tony Lazzeri",                   ingredientIds: ["eggplant", "salami", "olive-oil", "mozzarella"] },
+        { id: "127", label: "#127 Joe Piscopo",                    ingredientIds: ["eggplant", "mortadella", "smoked-mozzarella", "white-american-cheese", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "128", label: "#128 Paul Malignaggi",                ingredientIds: ["prosciutto", "mozzarella", "basil-mix", "balsamic-vinegar", "olive-oil", "roasted-peppers"] },
+        { id: "129", label: "#129 A Great Hero After 5 Singers",   ingredientIds: ["veal", "meatballs", "eggplant", "mozzarella"] },
+        { id: "130", label: "#130 Lioni's Brooklyn Cheesesteak",   ingredientIds: ["roast-beef", "onions", "prosciutto", "white-american-cheese"] },
+        { id: "131", label: "#131 Dr Salvatore Pernice",           ingredientIds: ["fried-chicken-cutlet", "eggplant", "basil-mix"] },
+        { id: "132", label: "#132 Scott Baio",                     ingredientIds: ["prosciutto", "sopressata", "banana-peppers", "balsamic-vinegar", "mozzarella", "basil-mix"] },
+        { id: "133", label: "#133 Ralph Branca",                   ingredientIds: ["capicola", "salami", "mozzarella", "lettuce", "tomato", "mayo", "olive-oil", "salt", "black-pepper", "onions", "stuffed-peppers"] },
+        { id: "134", label: "#134 Martin Scorsese & F.F. Coppola", ingredientIds: ["fried-chicken-cutlet", "mozzarella", "tomato", "onions", "oregano", "salt", "black-pepper"] },
+        { id: "135", label: "#135 Mike Francesa & Chris Russo",    ingredientIds: ["veal", "stuffed-peppers", "mozzarella"] },
+        { id: "136", label: "#136 The Chip",                       ingredientIds: ["ham", "grilled-chicken", "mozzarella", "white-american-cheese"] },
+        { id: "137", label: "#137 Louis Campanelli",               ingredientIds: ["prosciutto", "roast-beef", "mozzarella", "sun-dried-tomatoes", "balsamic-vinegar"] },
+        { id: "138", label: "#138 Lioni Brooklyn Heroes",          ingredientIds: ["veal", "prosciutto", "mozzarella", "basil-mix", "stuffed-peppers", "olive-oil"] },
+        { id: "139", label: "#139 Doo Wopper Hero",                ingredientIds: ["prosciutto", "capicola", "sopressata", "mozzarella", "provolone", "bruschetta", "balsamic-vinegar"] },
+        { id: "375", label: "#375 Joseph Graffagnino",             ingredientIds: ["fried-chicken-cutlet", "roast-beef", "white-american-cheese", "honey-mustard"] },
+        // Smoked Mozzarella Heroes
+        { id: "1a",  label: "#1a Giuseppe Sal Salzarullo",         ingredientIds: ["mortadella", "smoked-mozzarella", "basil-mix"] },
+        { id: "2a",  label: "#2a Rita Hayworth",                   ingredientIds: ["capicola", "smoked-mozzarella", "basil-mix", "olive-oil"] },
+        { id: "3a",  label: "#3a Billy Martin",                    ingredientIds: ["prosciutto", "smoked-mozzarella", "roasted-peppers", "oregano"] },
+        { id: "4a",  label: "#4a Mulberry Street",                 ingredientIds: ["turkey", "smoked-mozzarella", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "5a",  label: "#5a Bobby/Frankie/Fabian",            ingredientIds: ["ham", "salami", "smoked-mozzarella", "olive-oil", "oregano", "black-pepper"] },
+        { id: "6a",  label: "#6a Willie Mosconi",                  ingredientIds: ["turkey", "smoked-mozzarella", "bruschetta", "olive-oil"] },
+        { id: "7a",  label: "#7a Joe Garagiola",                   ingredientIds: ["fried-chicken-cutlet", "smoked-mozzarella", "green-pesto", "oregano", "salt", "black-pepper"] },
+        { id: "8a",  label: "#8a Arturo Gatti",                    ingredientIds: ["grilled-chicken", "smoked-mozzarella", "mozzarella", "white-american-cheese"] },
+        { id: "9a",  label: "#9a Jon Bon Jovi",                    ingredientIds: ["capicola", "sopressata", "smoked-mozzarella", "lettuce", "tomato", "olive-oil", "salt", "black-pepper", "oregano"] },
+        { id: "10a", label: "#10a Bernadette Lazzara",             ingredientIds: ["smoked-mozzarella", "mozzarella", "arugula", "olive-oil", "lettuce", "salt", "black-pepper", "oregano"] },
+        { id: "11a", label: "#11a Joe Pepitone",                   ingredientIds: ["smoked-mozzarella", "eggplant", "roasted-peppers", "olive-oil", "balsamic-vinegar", "oregano", "salt", "black-pepper"] },
+        // P Menu
+        { id: "p1",  label: "P1 Rosanna Scotto",                   ingredientIds: ["ham", "salami", "pepperoni", "sopressata", "mozzarella", "roasted-peppers"] },
+        { id: "p2",  label: "P2 Joe Causi",                        ingredientIds: ["ham", "turkey", "roast-beef", "pepper-ham", "white-american-cheese", "swiss-cheese", "lettuce", "tomato"] },
+        { id: "p3",  label: "P3 Anthony Scire",                    ingredientIds: ["italian-sausage", "sweet-peppers", "white-american-cheese", "tomato"] },
+        { id: "p4",  label: "P4 Domenick Cama",                    ingredientIds: ["mortadella", "ricotta", "basil-mix", "romano-cheese", "salt", "black-pepper", "olive-oil"] },
       ];
 
       const els = {
@@ -567,30 +788,37 @@
         mainsList: document.getElementById("mainsList"),
         sidesList: document.getElementById("sidesList"),
         selectedTags: document.getElementById("selectedTags"),
-        summary: document.getElementById("summary"),
-        charCount: document.getElementById("charCount"),
         countPill: document.getElementById("countPill"),
-        copyBtn: document.getElementById("copyBtn"),
         clearBtn: document.getElementById("clearBtn"),
         sampleBtn: document.getElementById("sampleBtn"),
         addCustomBtn: document.getElementById("addCustomBtn"),
         toast: document.getElementById("toast"),
+        recPanel: document.getElementById("recPanel"),
+        recList: document.getElementById("recList"),
+        recCountPill: document.getElementById("recCountPill"),
+        orderListEl: document.getElementById("orderListEl"),
+        tabSandwiches: document.getElementById("tabSandwiches"),
+        tabOrder: document.getElementById("tabOrder"),
+        orderBadge: document.getElementById("orderBadge"),
+        recPanelTitle: document.getElementById("recPanelTitle"),
       };
 
-      /** @type {{ingredients: typeof DEFAULT_INGREDIENTS, selectedIds: string[], summaryOverride?: string}} */
+      let currentTab = "sandwiches";
+
+      /** @type {{ingredients: typeof DEFAULT_INGREDIENTS, selectedIds: string[], orderItems: {presetId: string, label: string, qty: number}[]}} */
       let state = loadState();
 
       function loadState() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [] };
+          if (!raw) return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [], orderItems: [] };
           const parsed = JSON.parse(raw);
           const ingredients = Array.isArray(parsed.ingredients) ? parsed.ingredients : DEFAULT_INGREDIENTS.slice();
           const selectedIds = Array.isArray(parsed.selectedIds) ? parsed.selectedIds : [];
-          const summaryOverride = typeof parsed.summaryOverride === "string" ? parsed.summaryOverride : undefined;
-          return { ingredients, selectedIds, summaryOverride };
+          const orderItems = Array.isArray(parsed.orderItems) ? parsed.orderItems : [];
+          return { ingredients, selectedIds, orderItems };
         } catch {
-          return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [] };
+          return { ingredients: DEFAULT_INGREDIENTS.slice(), selectedIds: [], orderItems: [] };
         }
       }
 
@@ -609,21 +837,6 @@
       function getSelectedIngredients() {
         const selectedSet = new Set(state.selectedIds);
         return state.ingredients.filter((i) => selectedSet.has(i.id));
-      }
-
-      function buildSummaryText() {
-        const selected = getSelectedIngredients();
-        const mains = selected.filter((x) => x.kind === "main").map((x) => x.name);
-        const sides = selected.filter((x) => x.kind === "side").map((x) => x.name);
-
-        const lines = [];
-        lines.push("Order:");
-        lines.push(`- Mains: ${mains.length ? mains.join(", ") : "(none selected)"}`);
-        lines.push(`- Sides: ${sides.length ? sides.join(", ") : "(none selected)"}`);
-        lines.push("");
-        lines.push("Notes:");
-        lines.push("- (add bread/toast/cut-in-half/etc.)");
-        return lines.join("\n");
       }
 
       function render() {
@@ -649,11 +862,118 @@
         const selectedSides = selected.filter((x) => x.kind === "side").length;
         els.countPill.textContent = `${selectedMains} mains • ${selectedSides} sides`;
 
-        const computed = buildSummaryText();
-        if (!els.summary.matches(":focus")) {
-          els.summary.value = typeof state.summaryOverride === "string" ? state.summaryOverride : computed;
+        renderRecommendations();
+        renderOrderList();
+      }
+
+      function renderRecommendations() {
+        const selectedSet = new Set(state.selectedIds);
+
+        if (selectedSet.size === 0) {
+          els.recCountPill.textContent = "";
+          els.recList.innerHTML = `<div class="small" style="padding:4px 0">Select ingredients to see matching sandwiches.</div>`;
+          return;
         }
-        els.charCount.textContent = `${els.summary.value.length} characters`;
+
+        const matches = PRESETS.map((preset) => {
+          const included = preset.ingredientIds.filter((id) => selectedSet.has(id));
+          return { preset, included };
+        })
+          .filter((r) => r.included.length === selectedSet.size)
+          .sort((a, b) => b.included.length - a.included.length);
+
+        els.recCountPill.textContent = matches.length ? `${matches.length}` : "";
+
+        if (matches.length === 0) {
+          els.recList.innerHTML = `<div class="small" style="padding:4px 0">No sandwiches match your current selection.</div>`;
+          return;
+        }
+
+        els.recList.innerHTML = matches.map(({ preset }) => {
+          const [num, rest] = preset.label.includes("—")
+            ? preset.label.split("—").map((s) => s.trim())
+            : [preset.label, ""];
+
+          const chips = preset.ingredientIds.map((id) => {
+            const ing = state.ingredients.find((i) => i.id === id);
+            const name = ing ? ing.name : id;
+            const isSelected = selectedSet.has(id);
+            const style = isSelected
+              ? "background:rgba(15,138,58,.15);border-color:rgba(15,138,58,.4);color:var(--ink);font-weight:600"
+              : "background:rgba(20,20,20,.05);border-color:transparent;color:var(--faint)";
+            return `<span class="pill" style="padding:3px 8px;font-size:11px;${style}">${escapeHtml(name)}</span>`;
+          }).join("");
+
+          return `
+            <div class="recItem" style="flex-direction:column;align-items:flex-start;gap:6px">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px">
+                <div style="font-weight:600;font-size:13px;min-width:0">${escapeHtml(num)}${rest ? `<span style="font-weight:400;color:var(--muted)"> — ${escapeHtml(rest)}</span>` : ""}</div>
+                <button class="addToOrderBtn primary" type="button" data-preset-id="${escapeAttr(preset.id)}" data-preset-label="${escapeAttr(preset.label)}" style="flex-shrink:0;border-radius:8px;padding:5px 10px;font-size:12px">+ Add</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function renderOrderList() {
+        const total = state.orderItems.reduce((s, x) => s + x.qty, 0);
+        els.orderBadge.textContent = total;
+        els.orderBadge.style.display = total > 0 ? "" : "none";
+
+        if (state.orderItems.length === 0) {
+          els.orderListEl.innerHTML = `<div class="small" style="padding:4px 0">No sandwiches added yet. Find a sandwich and click "+ Add".</div>`;
+          return;
+        }
+
+        els.orderListEl.innerHTML = state.orderItems.map((item) => `
+          <div class="orderItem">
+            <div style="font-weight:600;font-size:13px;min-width:0;flex:1">${escapeHtml(item.label)}</div>
+            <div class="qtyControls">
+              <button class="qtyBtn" type="button" data-action="dec" data-preset-id="${escapeAttr(item.presetId)}">−</button>
+              <span class="qtyNum">${item.qty}</span>
+              <button class="qtyBtn" type="button" data-action="inc" data-preset-id="${escapeAttr(item.presetId)}">+</button>
+              <button class="qtyBtn danger" type="button" data-action="remove" data-preset-id="${escapeAttr(item.presetId)}" style="margin-left:4px">×</button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function switchTab(tab) {
+        currentTab = tab;
+        els.tabSandwiches.classList.toggle("active", tab === "sandwiches");
+        els.tabOrder.classList.toggle("active", tab === "order");
+        els.recList.style.display = tab === "sandwiches" ? "" : "none";
+        els.orderListEl.style.display = tab === "order" ? "" : "none";
+        els.recPanelTitle.textContent = tab === "sandwiches" ? "Sandwiches" : "Order list";
+      }
+
+      function addToOrder(presetId, label) {
+        const items = state.orderItems.slice();
+        const existing = items.find((x) => x.presetId === presetId);
+        if (existing) {
+          existing.qty += 1;
+        } else {
+          items.push({ presetId, label, qty: 1 });
+        }
+        saveState({ orderItems: items });
+        renderOrderList();
+        showToast(`Added ${label}.`);
+      }
+
+      function changeOrderQty(presetId, delta) {
+        const items = state.orderItems.slice();
+        const item = items.find((x) => x.presetId === presetId);
+        if (!item) return;
+        item.qty += delta;
+        if (item.qty <= 0) items.splice(items.indexOf(item), 1);
+        saveState({ orderItems: items });
+        renderOrderList();
+      }
+
+      function removeFromOrder(presetId) {
+        saveState({ orderItems: state.orderItems.filter((x) => x.presetId !== presetId) });
+        renderOrderList();
       }
 
       function itemHtml(i, checked) {
@@ -711,7 +1031,6 @@
         if (set.has(id)) set.delete(id);
         else set.add(id);
         saveState({ selectedIds: Array.from(set) });
-        saveState({ summaryOverride: undefined });
         render();
       }
 
@@ -719,35 +1038,18 @@
         const set = new Set(state.selectedIds);
         set.delete(id);
         saveState({ selectedIds: Array.from(set) });
-        saveState({ summaryOverride: undefined });
         render();
       }
 
       function clearAll() {
-        saveState({ selectedIds: [], summaryOverride: undefined });
+        saveState({ selectedIds: [] });
         render();
         showToast("Cleared.");
       }
 
-      async function copySummary() {
-        const text = els.summary.value.trim();
-        if (!text) {
-          showToast("Nothing to copy.");
-          return;
-        }
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast("Copied.");
-        } catch {
-          els.summary.focus();
-          els.summary.select();
-          showToast("Select + copy (⌘C).");
-        }
-      }
-
       function loadExample() {
         const example = ["grilled-chicken", "green-pesto", "provolone", "tomato", "banana-peppers"];
-        saveState({ selectedIds: example, summaryOverride: undefined });
+        saveState({ selectedIds: example });
         render();
         showToast("Example loaded.");
       }
@@ -789,7 +1091,7 @@
         const available = new Set(state.ingredients.map((i) => i.id));
         const selectedIds = preset.ingredientIds.filter((x) => available.has(x));
 
-        saveState({ selectedIds, summaryOverride: undefined });
+        saveState({ selectedIds });
         render();
         showToast(`Applied ${preset.label.split("—")[0].trim()}.`);
       }
@@ -816,16 +1118,28 @@
         removeIngredient(tag.getAttribute("data-id"));
       });
 
-      els.summary.addEventListener("input", () => {
-        saveState({ summaryOverride: els.summary.value });
-        els.charCount.textContent = `${els.summary.value.length} characters`;
-      });
-
-      els.copyBtn.addEventListener("click", () => copySummary());
       els.clearBtn.addEventListener("click", () => clearAll());
       els.sampleBtn.addEventListener("click", () => loadExample());
       els.addCustomBtn.addEventListener("click", () => addCustom());
       els.applyPresetBtn.addEventListener("click", () => applyPreset());
+
+      els.tabSandwiches.addEventListener("click", () => switchTab("sandwiches"));
+      els.tabOrder.addEventListener("click", () => switchTab("order"));
+
+      els.recList.addEventListener("click", (e) => {
+        const btn = e.target.closest(".addToOrderBtn");
+        if (!btn) return;
+        addToOrder(btn.dataset.presetId, btn.dataset.presetLabel);
+      });
+
+      els.orderListEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const { action, presetId } = btn.dataset;
+        if (action === "inc") changeOrderQty(presetId, 1);
+        else if (action === "dec") changeOrderQty(presetId, -1);
+        else if (action === "remove") removeFromOrder(presetId);
+      });
 
       // First render
       initPresets();
