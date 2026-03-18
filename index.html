@@ -1033,10 +1033,18 @@
           return;
         }
 
-        els.orderListEl.innerHTML = state.orderItems.map((item) => `
+        els.orderListEl.innerHTML = state.orderItems.map((item) => {
+          const preset = PRESETS.find((p) => p.id === item.presetId);
+          const description = preset
+            ? preset.ingredientIds.map((id) => { const ing = state.ingredients.find((i) => i.id === id); return ing ? ing.name : id; }).join(", ")
+            : "";
+          return `
           <div class="orderItem" style="flex-direction:column;align-items:stretch;gap:6px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <div style="font-weight:600;font-size:13px;min-width:0;flex:1">${escapeHtml(item.label)}</div>
+              <div style="min-width:0;flex:1">
+                <div style="font-weight:600;font-size:13px">${escapeHtml(item.label)}</div>
+                ${description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(description)}</div>` : ""}
+              </div>
               <div class="qtyControls">
                 <button class="qtyBtn" type="button" data-action="dec" data-preset-id="${escapeAttr(item.presetId)}">−</button>
                 <span class="qtyNum">${item.qty}</span>
@@ -1053,7 +1061,8 @@
               data-preset-id="${escapeAttr(item.presetId)}"
             />
           </div>
-        `).join("");
+        `;
+        }).join("");
       }
 
       function switchTab(tab) {
